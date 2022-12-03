@@ -1,4 +1,4 @@
-import rivercommon
+from app.static import rivercommon
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -43,7 +43,7 @@ class MainParams():
             json.dump(self.__dict__, outfile)
 
     def load(self):
-        curfname = self.basefname + '.json'
+        curfname = Path('app', 'static',self.basefname + '.json')
         if not os.path.exists(curfname):
             return False
         curset = dict()
@@ -72,10 +72,10 @@ def showdfinfo(cinfo = rivercommon.RiverInfo(), postreport = rivercommon.ReportH
     print(cinfo.data.isna())
     print(cinfo.data['Уровень'].isna().sum())
 
-def dropunusualcolumns(cinfo = rivercommon.RiverInfo(), params = MainParams()):
+def dropunusualcolumns(cinfo = rivercommon.RiverInfo(), params = MainParams(), postreport = rivercommon.ReportHTML()):
     #Удаляем флаги, которые ни разу не изменялись за весь период наблюдений
     if len(params.unusualcolumns) == 0:
-        print('=' * 40, ' Создание списка неиспользуемых флагов ', '=' * 40)
+        #print('=' * 40, ' Создание списка неиспользуемых флагов ', '=' * 40)
         fullcount = cinfo.data.shape[0]
         unusecolstxt = ''
         for colname in cinfo.data.columns:
@@ -92,7 +92,7 @@ def dropunusualcolumns(cinfo = rivercommon.RiverInfo(), params = MainParams()):
     postreport.addtext(unusecolstxt+', количество удаленных флагов:'+str(len(params.unusualcolumns)))            
     cinfo.data = cinfo.data.drop(params.unusualcolumns, axis=1)
 
-def findreplacenan(cinfo = rivercommon.RiverInfo()):
+def findreplacenan(cinfo = rivercommon.RiverInfo(), postreport = rivercommon.ReportHTML()):
     #Находим последовательные промежутки, содержащие nan в столбце 'Уровень'
     postreport.addsubheader('Даты с пропущенными уровнями:')
     nanindexlist = cinfo.data[cinfo.data['Уровень'].isna()].index.to_list()
@@ -121,7 +121,7 @@ def showgist(data = pd.DataFrame()):
             sns.histplot(data=data, x=data.columns[3*i + j], ax=ax, kde=True, stat='probability').set(ylabel=None)
     plt.show()
 
-def showgistflags(data = pd.DataFrame(), picname = 'gist.jpg'):
+def showgistflags(data = pd.DataFrame(), picname = 'gist.jpg', postreport = rivercommon.ReportHTML()):
     colnames = data.columns.to_list()
     gistcount = len(colnames)
     hbalance = [4] + [1]*(gistcount-1)
@@ -134,7 +134,7 @@ def showgistflags(data = pd.DataFrame(), picname = 'gist.jpg'):
     postreport.addsubheader('Распределение уровня и флагов по времени:')
     postreport.addpic(picname)
 
-def showpairdist(data = pd.DataFrame(), picname = 'gist.jpg'):
+def showpairdist(data = pd.DataFrame(), picname = 'gist.jpg', postreport = rivercommon.ReportHTML()):
     #sns.pairplot(data, height=4, diag_kind='kde')
     postreport.addsubheader('Попарные графики зависимостей:')
     #plt.savefig(picname)
@@ -148,7 +148,7 @@ def normalizelevel(data = pd.DataFrame(), params = MainParams()):
     params.save()
     data['Уровень'] = (data['Уровень'] - params.curmean) / params.curstd
 
-def plot_train_history(history, title, picname):
+def plot_train_history(history, title, picname, postreport = rivercommon.ReportHTML()):
     loss = history.history['loss']
     val_loss = history.history['val_loss']
     epochs = range(len(loss))
@@ -164,7 +164,7 @@ def plot_train_history(history, title, picname):
 def create_time_steps(length):
     return list(range(-length, 0))
 
-def multi_step_plot(history, true_future, prediction, picname):
+def multi_step_plot(history, true_future, prediction, picname, postreport = rivercommon.ReportHTML()):
     plt.figure(figsize=(12, 6))
     num_in = create_time_steps(len(history))
     num_out = len(true_future)
@@ -180,7 +180,7 @@ def multi_step_plot(history, true_future, prediction, picname):
     plt.savefig(picname)
     postreport.addpic(picname, 50)
 
-def multi_step_plot_dates(history, history_label, true_future, prediction, feature_label, picname):
+def multi_step_plot_dates(history, history_label, true_future, prediction, feature_label, picname, postreport = rivercommon.ReportHTML()):
     plt.figure(figsize=(12, 6))
 
     plt.plot(history_label, np.array(history[:, 0]), label='Исторические данные')
@@ -217,7 +217,7 @@ def one_test_data(dataset, target, start_index,  params = MainParams()):
     return np.array(data), np.array(labels)
 
 
-def createltsmmodel(data = pd.DataFrame(), params = MainParams()):
+def createltsmmodel(data = pd.DataFrame(), params = MainParams(), postreport= rivercommon.ReportHTML()):
     x_train_multi, y_train_multi = multivariate_data(data, data['Уровень'], 'train', params)
     x_val_multi, y_val_multi = multivariate_data(data, data['Уровень'], 'val', params)
     
@@ -237,7 +237,7 @@ def createltsmmodel(data = pd.DataFrame(), params = MainParams()):
     multi_step_model.compile(optimizer=tf.keras.optimizers.RMSprop(clipvalue=1.0), loss='mae')
 
     multi_step_history = multi_step_model.fit(train_data_multi, epochs=6, steps_per_epoch=365, validation_data=val_data_multi, validation_steps=365)
-    plot_train_history(multi_step_history, 'Multi-Step Training and validation loss', params.basefname+'_multistep.jpg')
+    plot_train_history(multi_step_history, 'Multi-Step Training and validation loss', params.basefname+'_multistep.jpg', postreport)
     multi_step_model.save(params.basefname + '_ltsm')
 
 def loadsavedltsmmodel(data = pd.DataFrame(), params = MainParams()):
@@ -251,13 +251,14 @@ def loadsavedltsmmodel(data = pd.DataFrame(), params = MainParams()):
         multi_step_plot(x[0], y[0], multi_step_model.predict(x)[0], f'{params.basefname}_{i}_predictions.jpg')
         i += 1
 
-def loadsavedltsmmodelone(data = pd.DataFrame(), params = MainParams(), sdate = '2013-03-15'):
+def loadsavedltsmmodelone(data = pd.DataFrame(), params = MainParams(), sdate = '2013-03-15', postreport= rivercommon.ReportHTML()):
     startindex = data.index.get_indexer([sdate])[0]
     x_val_multi, y_val_multi = one_test_data(data, data['Уровень'], startindex, params)
     x_val_multi = np.asarray(x_val_multi).astype('float32')
     val_data_multi = tf.data.Dataset.from_tensor_slices((x_val_multi, y_val_multi))
     val_data_multi = val_data_multi.batch(params.batchsize).repeat()
-    multi_step_model = tf.keras.models.load_model(params.basefname + '_ltsm')
+    fname = Path('app', 'static', params.basefname + '_ltsm')
+    multi_step_model = tf.keras.models.load_model(fname)
     for x, y in val_data_multi.take(1):
         unnorm_hist = x[0] * params.curstd + params.curmean
         y_unnorm_real = y[0] * params.curstd + params.curmean
@@ -266,13 +267,54 @@ def loadsavedltsmmodelone(data = pd.DataFrame(), params = MainParams(), sdate = 
         hist_lbl = data.iloc[hist_start:startindex].index.to_list()
         pred_end = startindex + len(y_unnorm_real)
         feature_lbl = data.iloc[startindex:pred_end].index.to_list()
-        multi_step_plot_dates(unnorm_hist, hist_lbl, y_unnorm_real, y_unnorm_predict, feature_lbl, f'{params.basefname}_ltsm_0_prediction.jpg')
+        jpgname = Path('app', 'static', f'{params.basefname}_ltsm_0_prediction.jpg')
+        multi_step_plot_dates(unnorm_hist, hist_lbl, y_unnorm_real, y_unnorm_predict, feature_lbl, jpgname, postreport)
+
+def fullprocedure():
+    #rivercommon.InitData()
+    md = rivercommon.DataFile(fname=Path('app', 'static', 'rawinfo','Нижняя Тунгуска 2008.xls'))
+    md.loadfile()
+    curleg = md.legend.to_html()
+    params = MainParams('09405')
+    postreport = rivercommon.ReportHTML(params.basefname)
+    postreport.addsubheader('Легенда файла данных:')
+    postreport.addtext(curleg)
+    curfname = Path('app', 'static', 'postsinfo', params.basefname + '.csv')
+    curinfo = rivercommon.RiverInfo()
+    curinfo.loadfromfile(curfname)
+    if not params.load():
+        params.loadfromdf(curinfo.data)
+        params.save()
+    findreplacenan(curinfo, postreport)
+    dropunusualcolumns(curinfo, params, postreport)
+    showdfinfo(curinfo, postreport)
+    showgistflags(curinfo.data, params.basefname + '_level_flags.jpg', postreport)
+    showpairdist(curinfo.data, params.basefname + '_pairs.jpg', postreport)
+    normalizelevel(curinfo.data, params)
+    #createltsmmodel(curinfo.data, params, postreport)
+    #loadsavedltsmmodel(curinfo.data, params, postreport)
+    loadsavedltsmmodelone(curinfo.data, params, '2013-03-15', postreport)
+    postreport.savereport()
+
+def minprocedure(year, month, day):
+    params = MainParams('09405')
+    mfn = Path('app', 'static', params.basefname)
+    postreport = rivercommon.ReportHTML(mfn)
+    curfname = Path('app', 'static','postsinfo', params.basefname + '.csv')
+    curinfo = rivercommon.RiverInfo()
+    curinfo.loadfromfile(curfname)
+    findreplacenan(curinfo, postreport)
+    dropunusualcolumns(curinfo, params, postreport)
+    normalizelevel(curinfo.data, params)
+    loadsavedltsmmodelone(curinfo.data, params, f'{year}-{month}-{day}', postreport)
+    #
+
 
 class CommonModel():
     def __init__(self, basefname = '00000'):
         self.params = MainParams(basefname)
         self.params.load()
-        curfname = Path('postsinfo', self.params.basefname + '.csv')
+        curfname = Path('app', 'static', 'postsinfo', self.params.basefname + '.csv')
         curinfo = rivercommon.RiverInfo()
         curinfo.loadfromfile(curfname)
         self.data = curinfo.data
@@ -388,31 +430,7 @@ class FourierModel(CommonModel):
         #plt.show()
 
 if __name__ == '__main__':
-    #rivercommon.InitData()
-    md = rivercommon.DataFile(fname=Path('rawinfo','Нижняя Тунгуска 2008.xls'))
-    md.loadfile()
-    curleg = md.legend.to_html()
-    
-    params = MainParams('09405')
-    postreport = rivercommon.ReportHTML(params.basefname)
-    postreport.addsubheader('Легенда файла данных:')
-    postreport.addtext(curleg)
-    curfname = Path('postsinfo', params.basefname + '.csv')
-    curinfo = rivercommon.RiverInfo()
-    curinfo.loadfromfile(curfname)
-    if not params.load():
-        params.loadfromdf(curinfo.data)
-        params.save()
-    findreplacenan(curinfo)
-    dropunusualcolumns(curinfo, params)
-    showdfinfo(curinfo, postreport)
-    showgistflags(curinfo.data, params.basefname + '_level_flags.jpg')
-    showpairdist(curinfo.data, params.basefname + '_pairs.jpg')
-    normalizelevel(curinfo.data, params)
-    #createltsmmodel(curinfo.data, params)
-    loadsavedltsmmodel(curinfo.data, params)
-    loadsavedltsmmodelone(curinfo.data, params, '2013-03-15')
-    postreport.savereport()
+    pass
 
     '''
     

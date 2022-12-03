@@ -1,3 +1,4 @@
+import os
 import os.path
 from datetime import datetime
 from bs4 import BeautifulSoup

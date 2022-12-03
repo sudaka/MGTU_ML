@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" class="h-100">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>Прогнозирование уровня воды</title>
+
+<link href="static/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+
+    
+    <!-- Custom styles for this template -->
+    <link href="static/css/cover.css" rel="stylesheet">
+  </head>
+  <body class="d-flex h-100 text-center text-white bg-dark">
+    
+<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+  <header class="mb-auto">
+    <div>
+      <h3 class="float-md-start mb-2">Прогноз уровня воды.</h3>
+      <nav class="nav nav-masthead justify-content-center float-md-end">
+        <a class="nav-link" href="index">Ввести дату</a>
+        <a class="nav-link active" aria-current="page" href="predict">Прогноз</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="px-3">
+    <h3>Прогноз уровня на год вперед относительно {{day}}.{{month}}.{{year}} г.</h3>
+    <p></p>
+    <img src="static/09405_ltsm_0_prediction.jpg" class="img-fluid">
+    
+
+  </main>
+
+  <footer class="mt-auto text-white-50">
+    
+  </footer>
+</div>
+
+
+    
+  </body>
+</html>
