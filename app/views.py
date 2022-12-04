@@ -5,6 +5,9 @@ from datetime import datetime
 from app.static import rivermain
 
 def checkinput(year, month, day):
+    cyear = year
+    cmonth = month
+    cday = day
     if year not in [x for x in range(2011, 2016, 1)]:
         cyear = 2011
     if month not in [x for x in range(1, 13, 1)]:
@@ -29,6 +32,6 @@ def predict():
     curyear = request.args.get('year')
     curmonth = request.args.get('month')
     curday = request.args.get('day')
-    #(curyear, curmonth, curday) = checkinput(curyear, curmonth, curday)
+    (curyear, curmonth, curday) = checkinput(curyear, curmonth, curday)
     rivermain.minprocedure(curyear, curmonth, curday)
     return render_template("predict.html", year=curyear, month=curmonth, day=curday)
