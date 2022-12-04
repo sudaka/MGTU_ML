@@ -5,17 +5,11 @@ from datetime import datetime
 from app.static import rivermain
 
 def checkinput(year, month, day):
-    cyear = year
-    cmonth = month
-    cday = day
-    if year not in [x for x in range(2011, 2016, 1)]:
-        cyear = 2011
-    if month not in [x for x in range(1, 13, 1)]:
-        cmonth = 1
-    if day not in [x for x in range(1, 31, 1)]:
-        cday = 1
     try:
-        datetime.strptime(f'{day}/{month}/{year}', "%d/%m/%Y")
+        cyear = int(year)
+        cmonth = int(month)
+        cday = int(day)
+        datetime.strptime(f'{day}-{month}-{year}', "%d-%m-%Y")
     except:
         cyear = 2011
         cmonth = 1
